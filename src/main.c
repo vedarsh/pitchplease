@@ -1,12 +1,17 @@
 /**
- * CubeSat ADCS Standard Framework (CASF)
- * Main application entry point
+ * PitchPlease - CubeSat ADCS Standard Framework (CASF)
+ * Main Application
  */
 
-#include "control/control.h"
-#include "sensors/sensors.h"
+#include "control.h"
+#include "sensors.h"
+#ifdef BUILD_DYNAMICS
+#include "dynamics.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 
 // Simple HAL implementation
@@ -26,30 +31,15 @@ static void hal_log(int level, const char* fmt, ...) {
     va_end(args);
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
+    printf("PitchPlease - CubeSat ADCS Standard Framework (CASF)\n");
+    printf("======================================\n\n");
+
     // Initialize HAL
     casf_hal_t hal = {
         .get_time_us = hal_get_time_us,
         .log = hal_log
     };
-/**
- * PitchPlease - CubeSat ADCS Standard Framework (CASF)
- * Main Application
- */
-
-#include "control/control.h"
-#include "sensors/sensors.h"
-#ifdef BUILD_DYNAMICS
-#include "dynamics/dynamics.h"
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-int main(int argc, char* argv[]) {
-    printf("PitchPlease - CubeSat ADCS Standard Framework (CASF)\n");
-    printf("======================================\n\n");
 
     printf("Available commands:\n");
     printf("  -h, --help    : Show this help message\n");
@@ -77,18 +67,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    printf("This is a placeholder main application.\n");
-    printf("Please run the specific examples for functionality demonstrations.\n\n");
-
-    return 0;
-}
-    // For compatibility with extended_hal interface
-    casf_extended_hal_t extended_hal = {0};
-    extended_hal.base_hal = hal;
-
     // Initialize system
     casf_system_t system;
     casf_mission_config_t config = {0}; // Default configuration
+    config.mission_name = "PitchPlease Demo";
+    config.spacecraft_id = "PITCH-01";
+    config.default_mode = CASF_MODE_SAFE;
+    config.control_frequency_hz = 10;
 
     casf_result_t result = casf_init(&system, &hal, &config);
     if (result != CASF_OK) {
@@ -96,52 +81,18 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Create and register sensors
-    casf_sensor_driver_t magnetometer;
-    // Create a context for the magnetometer
-    void* mag_context = malloc(sizeof(int)); // Simple context allocation
-    if (!mag_context) {
-        printf("Failed to allocate context for magnetometer\n");
-        return 1;
-    }
-    result = casf_create_magnetometer_driver(&magnetometer, "MAG3110", "NXP", "1.0", mag_context);
-    if (result != CASF_OK) {
-        printf("Failed to create magnetometer: %s\n", casf_result_to_string(result));
-        free(mag_context);
-        return 1;
-    }
+    printf("CASF System initialized.\n");
+    printf("To see active demonstrations, run the examples:\n");
+    printf("  ./casf_example - Basic ADCS functionality\n");
 
-    result = casf_register_sensor(&system, &magnetometer);
-    if (result != CASF_OK) {
-        printf("Failed to register magnetometer: %s\n", casf_result_to_string(result));
-        return 1;
-    }
+#ifdef BUILD_DYNAMICS
+    printf("  ./casf_detumbling - Detumbling simulation\n");
+#endif
 
-    // Start the system
-    result = casf_start(&system);
-    if (result != CASF_OK) {
-        printf("System start failed: %s\n", casf_result_to_string(result));
-        return 1;
-    }
-
-    printf("CASF System initialized and running.\n");
-
-    // Run for a few control cycles
-    for (int i = 0; i < 10; i++) {
-        result = casf_run_control_cycle(&system);
-        if (result != CASF_OK) {
-            printf("Control cycle failed: %s\n", casf_result_to_string(result));
-            break;
-        }
-    }
+    printf("\n");
 
     // Shutdown the system
     casf_shutdown(&system);
-
-    // Free allocated memory
-    if (magnetometer.context) {
-        free(magnetometer.context);
-    }
 
     return 0;
 }

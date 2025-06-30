@@ -6,9 +6,18 @@
  * using the CASF dynamics simulator to validate the algorithm.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <stdarg.h>
+#include <time.h>
+
 #include "../src/control/control.h"
 #include "../src/sensors/sensors.h"
+#ifdef BUILD_DYNAMICS
 #include "../src/dynamics/dynamics.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
